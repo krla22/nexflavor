@@ -4,34 +4,36 @@
 <meta charset="utf-8">
 <title>nexFlavor POS</title>
 <style>
-  :root{--ink:#1A1A1A;--paper:#FFF3E6;--cream:#FFF7E3;--red:#BF0D1A;--signal:#E83A2F;--orange:#EC7E3C;--glow:#FFBF5B;--gray:#808080}
+  :root{--ink:#1A1A1A;--paper:#FFF3E6;--cream:#FFF7E3;--red:#BF0D1A;--signal:#E83A2F;--orange:#EC7E3C;--glow:#FFBF5B;--gray:#808080;--radius:12px}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,sans-serif;background:var(--paper);color:var(--ink);display:grid;grid-template-columns:1fr 380px;height:100vh}
-  header{grid-column:1/-1;background:var(--ink);color:var(--cream);padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
-  h1{font-size:18px;letter-spacing:1px}
-  #queue{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
-  .order{background:var(--cream);border-left:5px solid var(--gray);border-radius:8px;padding:14px;cursor:pointer}
-  .order:hover{border-left-color:var(--orange)}
-  .order.sel{border-left-color:var(--red);box-shadow:0 0 0 2px var(--red)}
+  body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);display:grid;grid-template-columns:1fr 380px;height:100vh;-webkit-font-smoothing:antialiased}
+  header{grid-column:1/-1;background:var(--ink);color:var(--cream);padding:16px 28px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  h1{font-size:18px;font-weight:700;letter-spacing:1px}
+  #clock{font-size:13px;color:#aaa;font-variant-numeric:tabular-nums}
+  #queue{padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+  .order{background:var(--cream);border-radius:var(--radius);padding:16px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.05);transition:.15s}
+  .order:hover{box-shadow:0 4px 14px rgba(0,0,0,.1);transform:translateY(-1px)}
+  .order.sel{box-shadow:0 0 0 2px var(--red)}
   .order .top{display:flex;justify-content:space-between;font-weight:700;font-size:14px}
   .order .top .amt{color:var(--red)}
-  .order .st{font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px}
-  aside{background:var(--ink);color:var(--cream);padding:20px;display:flex;flex-direction:column;overflow:hidden}
-  aside h2{font-size:15px;color:var(--glow);margin-bottom:12px}
+  .order .st{font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+  aside{background:var(--ink);color:var(--cream);padding:24px;display:flex;flex-direction:column;overflow:hidden}
+  aside h2{font-size:15px;font-weight:700;letter-spacing:1px;color:var(--glow);margin-bottom:14px}
   #detail{flex:1;overflow-y:auto;font-size:14px}
-  #detail li{list-style:none;display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #333}
-  #due{font-size:26px;font-weight:700;padding:12px 0;border-top:2px solid var(--glow)}
-  label{font-size:12px;color:var(--gray);display:block;margin-top:10px}
-  select,input{width:100%;padding:10px;border-radius:6px;border:0;font-size:15px;margin-top:4px}
+  #detail li{list-style:none;display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333}
+  #due{font-size:26px;font-weight:700;padding:14px 0;border-top:2px solid var(--glow)}
+  label{font-size:12px;color:#999;display:block;margin-top:12px;letter-spacing:.5px}
+  select,input{width:100%;padding:10px;border-radius:8px;border:0;font-size:15px;margin-top:6px}
   #change{font-size:15px;color:var(--glow);padding:8px 0;min-height:26px}
-  #pay{background:var(--red);color:#fff;border:0;padding:16px;font-size:16px;font-weight:700;border-radius:8px;cursor:pointer;margin-top:10px}
+  #pay{background:var(--red);color:#fff;border:0;padding:16px;font-size:16px;font-weight:700;border-radius:var(--radius);cursor:pointer;margin-top:12px;transition:.15s}
+  #pay:hover:not(:disabled){background:var(--signal)}
   #pay:disabled{background:var(--gray);cursor:not-allowed}
   #msg{font-size:13px;color:var(--glow);padding:8px 0;min-height:20px}
-  .empty{color:#666;font-size:13px}
+  .empty{color:#999;font-size:13px}
 </style>
 </head>
 <body>
-<header><h1>CASHIER POS</h1><span id="clock"></span></header>
+<header><h1>Cashier POS</h1><span id="clock"></span></header>
 <div id="queue"></div>
 <aside>
   <h2>PAYMENT</h2>
@@ -59,7 +61,7 @@ async function load(){
   document.getElementById('queue').innerHTML=orders.length?orders.map(o=>`
     <div class="order ${sel===o.name?'sel':''}" onclick="pick('${o.name}')">
       <div class="top"><span>${o.name.replace('SAL-ORD-','')}</span><span class="amt">₱${o.grand_total.toFixed(2)}</span></div>
-      <div class="st">${o.custom_kitchen_status||'—'} · ${o.status}</div>
+      <div class="st">${o.custom_kitchen_status||'New'} - ${o.status}</div>
     </div>`).join(''):'<p style="color:#999">No open orders</p>';
 }
 

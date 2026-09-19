@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>nexFlavor — Order Status</title>
+<title>nexFlavor Order Status</title>
 <style>
-  :root{--ink:#1A1A1A;--paper:#FFF3E6;--cream:#FFF7E3;--red:#BF0D1A;--signal:#E83A2F;--orange:#EC7E3C;--glow:#FFBF5B;--gray:#808080}
+  :root{--ink:#1A1A1A;--paper:#FFF3E6;--cream:#FFF7E3;--red:#BF0D1A;--signal:#E83A2F;--orange:#EC7E3C;--glow:#FFBF5B;--gray:#808080;--radius:14px}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
-  header{background:var(--ink);color:var(--cream);padding:16px 24px;text-align:center}
-  h1{font-size:20px;letter-spacing:2px}
-  .sub{font-size:12px;color:var(--gray);margin-top:4px}
-  #cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:28px;max-width:1100px;margin:0 auto}
-  .col h2{font-size:15px;letter-spacing:2px;padding:12px;text-align:center;border-radius:8px 8px 0 0;color:#fff}
+  body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+  header{background:var(--ink);color:var(--cream);padding:22px 28px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  h1{font-size:22px;font-weight:700;letter-spacing:1px}
+  .sub{font-size:13px;color:#aaa;margin-top:6px;font-variant-numeric:tabular-nums}
+  #cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:32px;max-width:1100px;margin:0 auto}
+  .col h2{font-size:15px;font-weight:700;letter-spacing:1.5px;padding:14px;text-align:center;border-radius:var(--radius) var(--radius) 0 0;color:#fff}
   .col:nth-child(1) h2{background:var(--orange)}
-  .col:nth-child(2) h2{background:#2d7a3e}
-  .list{background:var(--cream);min-height:55vh;border-radius:0 0 8px 8px;padding:16px;display:flex;flex-wrap:wrap;gap:12px;align-content:start;justify-content:center}
-  .num{font-size:34px;font-weight:800;padding:14px 20px;border-radius:10px;background:#fff;border:3px solid var(--gray);min-width:130px;text-align:center}
-  .ready .num{border-color:#2d7a3e;background:#2d7a3e;color:#fff;animation:pulse 1.6s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.72}}
-  .none{color:var(--gray);font-size:14px;padding:24px}
+  .col:nth-child(2) h2{background:var(--red)}
+  .list{background:var(--cream);min-height:55vh;border-radius:0 0 var(--radius) var(--radius);padding:20px;display:flex;flex-wrap:wrap;gap:14px;align-content:start;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+  .num{font-size:34px;font-weight:800;padding:16px 22px;border-radius:12px;background:#fff;border:2px solid #e8e0d3;min-width:130px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+  .ready .num{border-color:var(--red);background:var(--red);color:#fff;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.75}}
+  .none{color:var(--gray);font-size:14px;padding:24px;width:100%;text-align:center}
 </style>
 </head>
 <body>
-<header><h1>nexFlavor — ORDER STATUS</h1><div class="sub" id="clock"></div></header>
+<header><h1>nexFlavor Order Status</h1><div class="sub" id="clock"></div></header>
 <div id="cols">
   <div class="col"><h2>PREPARING</h2><div class="list" id="Preparing"></div></div>
   <div class="col ready"><h2>READY FOR PICKUP</h2><div class="list" id="Ready"></div></div>
@@ -41,7 +41,7 @@ async function load(){
   for(const k in b){
     document.getElementById(k).innerHTML=b[k].length
       ? b[k].map(n=>`<div class="num">${n}</div>`).join('')
-      : '<div class="none">— none —</div>';
+      : '<div class="none">No orders</div>';
   }
 }
 load();setInterval(load,5000);
