@@ -1,0 +1,1 @@
+# The script doesn't cover the POS Profile, Mode of Payment account, or POS Opening Entry. Those need the company abbreviation and user email, which vary per install
