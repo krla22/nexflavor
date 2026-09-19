@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>nexFlavor Kitchen</title>
+<style>
+  :root{--ink:#1A1A1A;--cream:#FFF7E3;--red:#BF0D1A;--signal:#E83A2F;--orange:#EC7E3C;--glow:#FFBF5B;--gray:#808080}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:var(--ink);color:var(--cream);min-height:100vh}
+  header{background:#000;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--orange)}
+  h1{font-size:18px;letter-spacing:1px}
+  #board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px}
+  .col h2{font-size:14px;padding:10px;text-align:center;border-radius:6px 6px 0 0;letter-spacing:1px}
+  .col:nth-child(1) h2{background:var(--signal)}
+  .col:nth-child(2) h2{background:var(--orange)}
+  .col:nth-child(3) h2{background:#2d7a3e}
+  .col .list{background:#222;min-height:60vh;padding:10px;border-radius:0 0 6px 6px;display:flex;flex-direction:column;gap:10px}
+  .ticket{background:var(--cream);color:var(--ink);border-radius:6px;padding:12px}
+  .ticket .id{font-weight:700;font-size:13px;color:var(--red)}
+  .ticket .age{float:right;font-size:11px;color:var(--gray)}
+  .ticket ul{list-style:none;margin:8px 0;font-size:14px}
+  .ticket li{padding:2px 0}
+  .ticket li b{color:var(--orange)}
+  .ticket button{width:100%;border:0;padding:8px;border-radius:4px;font-weight:700;cursor:pointer;background:var(--ink);color:var(--glow)}
+  .empty{color:#555;text-align:center;padding:20px;font-size:13px}
+</style>
+</head>
+<body>
+<header><h1>KITCHEN DISPLAY</h1><span id="clock"></span></header>
+<div id="board">
+  <div class="col"><h2>NEW</h2><div class="list" id="New"></div></div>
+  <div class="col"><h2>PREPARING</h2><div class="list" id="Preparing"></div></div>
+  <div class="col"><h2>READY</h2><div class="list" id="Ready"></div></div>
+</div>
+<script>
+const API="http://localhost:8000/api";
+const NEXT={New:"Preparing",Preparing:"Ready",Ready:"Served"};
+const LABEL={New:"START COOKING",Preparing:"MARK READY",Ready:"HANDED OVER"};
+
+setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString(),1000);
+
+function age(ts){
+  const m=Math.floor((Date.now()-new Date(ts))/60000);
+  return m<1?'just now':m+'m ago';
+}
+
+async function load(){
+  const f=encodeURIComponent('["name","creation","custom_kitchen_status"]');
+  const fl=encodeURIComponent('[["docstatus","=",1],["custom_kitchen_status","in",["New","Preparing","Ready"]]]');
+  const r=await fetch(`${API}/resource/Sales%20Order?fields=${f}&filters=${fl}&limit_page_length=0&order_by=creation asc`);
+  const j=await r.json();
+  const buckets={New:[],Preparing:[],Ready:[]};
+  await Promise.all((j.data||[]).map(async o=>{
+    const d=await (await fetch(`${API}/resource/Sales%20Order/${o.name}`)).json();
+    buckets[o.custom_kitchen_status].push({...o,items:d.data.items});
+  }));
+  for(const st of Object.keys(buckets)){
+    const el=document.getElementById(st);
+    el.innerHTML=buckets[st].length?buckets[st].map(o=>`
+      <div class="ticket">
+        <span class="id">${o.name.replace('SAL-ORD-','')}</span>
+        <span class="age">${age(o.creation)}</span>
+        <ul>${o.items.map(i=>`<li><b>${i.qty}×</b> ${i.item_name}</li>`).join('')}</ul>
+        <button onclick="bump('${o.name}','${st}')">${LABEL[st]}</button>
+      </div>`).join(''):'<div class="empty">— empty —</div>';
+  }
+}
+
+async function bump(name,from){
+  await fetch(`${API}/resource/Sales%20Order/${name}`,{
+    method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({custom_kitchen_status:NEXT[from]})});
+  load();
+}
+
+load();setInterval(load,5000);
+</script>
+</body>
+</html>

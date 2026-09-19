@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>nexFlavor Kiosk</title>
+<style>
+  :root{--ink:#1A1A1A;--paper:#FFF3E6;--cream:#FFF7E3;--red:#BF0D1A;--signal:#E83A2F;--orange:#EC7E3C;--glow:#FFBF5B;--gray:#808080}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:var(--paper);color:var(--ink);display:grid;grid-template-columns:1fr 340px;height:100vh}
+  header{grid-column:1/-1;background:var(--ink);color:var(--cream);padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+  h1{font-size:20px;letter-spacing:.5px}
+  #menu{padding:20px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;align-content:start}
+  .card{background:var(--cream);border:2px solid transparent;border-radius:10px;padding:16px;cursor:pointer;transition:.15s}
+  .card:hover{border-color:var(--orange);transform:translateY(-2px)}
+  .card h3{font-size:15px;margin-bottom:6px}
+  .card .price{color:var(--red);font-weight:700}
+  aside{background:var(--ink);color:var(--cream);padding:20px;display:flex;flex-direction:column;overflow:hidden}
+  aside h2{font-size:16px;margin-bottom:14px;color:var(--glow)}
+  #cart{flex:1;overflow-y:auto}
+  .line{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #333;font-size:14px}
+  .line button{background:var(--signal);color:#fff;border:0;border-radius:4px;width:22px;height:22px;cursor:pointer}
+  .qty{color:var(--glow);margin:0 8px}
+  #total{font-size:22px;font-weight:700;padding:14px 0;border-top:2px solid var(--glow)}
+  #place{background:var(--red);color:#fff;border:0;padding:16px;font-size:16px;font-weight:700;border-radius:8px;cursor:pointer}
+  #place:disabled{background:var(--gray);cursor:not-allowed}
+  #msg{padding:10px 0;font-size:14px;color:var(--glow);min-height:20px}
+</style>
+</head>
+<body>
+<header><h1>nexFlavor — SELF ORDER</h1><span id="clock"></span></header>
+<div id="menu">Loading…</div>
+<aside>
+  <h2>YOUR ORDER</h2>
+  <div id="cart"></div>
+  <div id="total">₱0.00</div>
+  <div id="msg"></div>
+  <button id="place" disabled>PLACE ORDER</button>
+</aside>
+<script>
+const API="http://localhost:8000/api";
+const cart={};let items=[];
+
+setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString(),1000);
+
+async function loadMenu(){
+  const f=encodeURIComponent('["item_code","item_name","standard_rate"]');
+  const r=await fetch(`${API}/resource/Item?fields=${f}&filters=[["item_group","=","Food"]]&limit_page_length=0`);
+  const j=await r.json();items=j.data;
+  document.getElementById('menu').innerHTML=items.map(i=>
+    `<div class="card" onclick="add('${i.item_code}')">
+       <h3>${i.item_name}</h3><span class="price">₱${i.standard_rate.toFixed(2)}</span>
+     </div>`).join('');
+}
+function add(code){cart[code]=(cart[code]||0)+1;render()}
+function sub(code){if(--cart[code]<1)delete cart[code];render()}
+function render(){
+  const keys=Object.keys(cart);
+  document.getElementById('cart').innerHTML=keys.map(k=>{
+    const i=items.find(x=>x.item_code===k);
+    return `<div class="line"><span>${i.item_name}</span>
+      <span><button onclick="sub('${k}')">−</button>
+      <span class="qty">${cart[k]}</span>
+      <button onclick="add('${k}')">+</button></span></div>`;
+  }).join('')||'<p style="color:#666;font-size:13px">Tap items to add</p>';
+  const total=keys.reduce((s,k)=>s+items.find(x=>x.item_code===k).standard_rate*cart[k],0);
+  document.getElementById('total').textContent='₱'+total.toFixed(2);
+  document.getElementById('place').disabled=!keys.length;
+}
+document.getElementById('place').onclick=async()=>{
+  const btn=document.getElementById('place');btn.disabled=true;
+  const msg=document.getElementById('msg');msg.textContent='Sending…';
+  const payload={
+    customer:"Walk-in Customer",
+    delivery_date:new Date().toISOString().slice(0,10),
+    custom_kitchen_status:"New",
+    docstatus:1,
+    items:Object.keys(cart).map(k=>({
+      item_code:k,qty:cart[k],rate:items.find(x=>x.item_code===k).standard_rate
+    }))
+  };
+  try{
+    const r=await fetch(`${API}/resource/Sales%20Order`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const j=await r.json();
+    if(j.data){msg.textContent='✓ '+j.data.name;Object.keys(cart).forEach(k=>delete cart[k]);render()}
+    else{msg.textContent='✗ '+(j.exception||'failed').slice(0,80);btn.disabled=false}
+  }catch(e){msg.textContent='✗ '+e.message;btn.disabled=false}
+};
+loadMenu();
+</script>
+</body>
+</html>
